@@ -114,4 +114,151 @@ function drawObject(obj){
     if(obj._img?.complete) ctx.drawImage(obj._img, obj.x, obj.y, obj.w, obj.h);
   }
 }
-f
+function wrapText(context, text, x, y, maxWidth, lineHeight){
+  const words = text.split(/\s+/); let line='';
+  for(let n=0;n<words.length;n++){
+    const test = line + words[n] + ' '; const w = context.measureText(test).width;
+    if(w > maxWidth && n>0){ context.fillText(line, x, y); line = words[n] + ' '; y += lineHeight; }
+    else line = test;
+  }
+  context.fillText(line, x, y);
+}
+
+// ==== Vstupy / nástroje ======================================================
+toolButtons.forEach(b => b.addEventListener('click', ()=>{
+  state.tool = b.dataset.tool;
+  if(state.tool==='image') imgInput.click();
+}));
+colorEl.oninput = ()=> state.color = colorEl.value;
+sizeEl.oninput  = ()=> state.size  = +sizeEl.value;
+alphaEl.oninput = ()=> state.alpha = +alphaEl.value;
+
+bgSelect.onchange = ()=> setBackground(bgSelect.value);
+btnNew.onclick = ()=> newPage(currentPage()?.background || 'plain');
+btnPrev.onclick = ()=> { if(state.pageIndex>0){ state.pageIndex--; syncUI(); } };
+btnNext.onclick = ()=> { if(state.pageIndex<state.pages.length-1){ state.pageIndex++; syncUI(); } };
+btnUndo.onclick = ()=> undo();
+btnRedo.onclick = ()=> redo();
+btnClear.onclick = ()=> { currentPage().objects.length=0; pushHistory({kind:'add',object:null}); render(); };
+
+btnSave.onclick = ()=>{
+  const data = JSON.stringify(state.pages.map(p=>({ background:p.background, objects:p.objects.map(o=>{const c={...o}; delete c._img; return c;}) })));
+  localStorage.setItem('notebook-v1', data);
+  alert('Sešit uložen do prohlížeče.');
+};
+btnLoad.onclick = ()=>{
+  const data = localStorage.getItem('notebook-v1');
+  if(!data) return alert('Nenalezen žádný uložený sešit.');
+  const pages = JSON.parse(data);
+  state.pages = pages.map(p=>({...p, history:[], redo:[]}));
+  state.pageIndex = 0;
+  syncUI();
+};
+btnExport.onclick = async ()=>{
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({orientation:'portrait', unit:'pt', format:[PAGE_W,PAGE_H]});
+  for(let i=0;i<state.pages.length;i++){
+    state.pageIndex = i; syncUI(false);
+    const dataURL = exportPageDataURL();
+    if(i>0) pdf.addPage([PAGE_W,PAGE_H],'portrait');
+    pdf.addImage(dataURL,'PNG',0,0,PAGE_W,PAGE_H);
+  }
+  pdf.save('zapisnik.pdf');
+};
+
+imgInput.onchange = (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const dataURL = reader.result;
+    const img = new Image(); img.src = dataURL;
+    img.onload = ()=>{
+      const scale = Math.min(800/img.width, 800/img.height, 1);
+      const w = img.width*scale, h = img.height*scale;
+      const obj = {type:'image', x:200, y:200, w, h, dataURL, _img:img};
+      currentPage().objects.push(obj); pushHistory({kind:'add',object:obj}); render();
+    };
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+};
+
+// ==== Myš/pero ===============================================================
+let pointerId = null;
+function toCanvasCoords(clientX, clientY){
+  const r = drawCanvas.getBoundingClientRect();
+  return { x:(clientX - r.left - state.panX)/state.zoom, y:(clientY - r.top - state.panY)/state.zoom };
+}
+function startStroke(p){
+  const mode = state.tool==='eraser' ? 'destination-out' : 'source-over';
+  const alpha = state.tool==='marker' ? Math.min(state.alpha, 0.35) : state.alpha;
+  const size = state.tool==='marker' ? Math.max(state.size, 12) : state.size;
+  state.currentStroke = {type:'stroke', color:state.color, size, alpha, mode, points:[p]};
+  currentPage().objects.push(state.currentStroke);
+  pushHistory({kind:'add', object:state.currentStroke});
+}
+function extendStroke(p){ state.currentStroke.points.push(p); render(); }
+function endStroke(){ state.currentStroke = null; }
+
+drawCanvas.addEventListener('pointerdown', (e)=>{
+  drawCanvas.setPointerCapture(e.pointerId); pointerId = e.pointerId;
+  const p = toCanvasCoords(e.clientX, e.clientY);
+  if(state.tool==='text'){ openTextEditor(p.x,p.y); return; }
+  if(state.tool==='select'){ /* (zatím jen přesun text/obrázku později) */ return; }
+  state.isDrawing = true; startStroke(p);
+});
+drawCanvas.addEventListener('pointermove', (e)=>{
+  if(pointerId!==e.pointerId) return;
+  const p = toCanvasCoords(e.clientX, e.clientY);
+  if(!state.isDrawing || !state.currentStroke) return;
+  extendStroke(p);
+});
+drawCanvas.addEventListener('pointerup', (e)=>{
+  if(pointerId!==e.pointerId) return;
+  drawCanvas.releasePointerCapture(e.pointerId); pointerId = null;
+  if(state.isDrawing){ endStroke(); state.isDrawing=false; }
+});
+
+document.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='z'){ e.preventDefault(); undo(); }
+  if((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey && e.key==='Z'))){ e.preventDefault(); redo(); }
+});
+
+// ==== Textový editor =========================================================
+function openTextEditor(x,y){
+  textEditor.style.left = `${x}px`;
+  textEditor.style.top  = `${y}px`;
+  textEditor.style.display = 'block';
+  textEditor.value = '';
+  textEditor.focus();
+  textEditor.onblur = ()=>{
+    const text = textEditor.value.trim();
+    textEditor.style.display='none';
+    if(text){
+      const obj = {type:'text', x, y, text, color:state.color, size: Math.max(14, state.size*4), alpha:state.alpha, maxWidth: 900};
+      currentPage().objects.push(obj); pushHistory({kind:'add', object:obj}); render();
+    }
+  };
+}
+
+function exportPageDataURL(){
+  const tmp = document.createElement('canvas'); tmp.width = PAGE_W; tmp.height = PAGE_H;
+  const tctx = tmp.getContext('2d');
+  // přepočet z aktuálního poměru na exportní rozlišení
+  tctx.drawImage(bgCanvas, 0,0, bgCanvas.width, bgCanvas.height, 0,0, PAGE_W, PAGE_H);
+  tctx.drawImage(drawCanvas,0,0, drawCanvas.width,drawCanvas.height, 0,0, PAGE_W, PAGE_H);
+  return tmp.toDataURL('image/png');
+}
+
+// ==== UI sync ================================================================
+function syncUI(redrawBg=true){
+  if(state.pages.length===0) newPage('plain');
+  const page = currentPage();
+  bgSelect.value = page.background;
+  if(redrawBg) drawBackground();
+  render();
+  pageInfo.textContent = `Stránka ${state.pageIndex+1} / ${state.pages.length}`;
+}
+newPage('plain');
+resizeCanvasToContainer();
+syncUI();
