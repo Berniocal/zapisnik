@@ -1,15 +1,15 @@
 {
-"name": "Zápisník (PWA)",
-"short_name": "Zápisník",
-"description": "Tabletový zápisník jako školní sešit – kreslení, text, obrázky, více stránek, export do PDF, offline.",
-"start_url": "./index.html",
-"scope": "./",
-"display": "standalone",
-"background_color": "#0f1729",
-"theme_color": "#0f1729",
-"icons": [
-{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-{ "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-{ "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-]
+  "name": "Zápisník (PWA)",
+  "short_name": "Zápisník",
+  "id": "/zapisnik/",
+  "start_url": "/zapisnik/",
+  "scope": "/zapisnik/",
+  "display": "standalone",
+  "background_color": "#0f1729",
+  "theme_color": "#0f1729",
+  "icons": [
+    { "src": "/zapisnik/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/zapisnik/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/zapisnik/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
 }
