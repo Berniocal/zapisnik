@@ -65,5 +65,6 @@ syncUI();
 
 
 function currentPage(){
-return state.pages[state.pageIndex];
-syncUI();
+  return state.pages[state.pageIndex];
+}
+
