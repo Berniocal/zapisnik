@@ -1,68 +1,122 @@
 <!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Zápisník (PWA)</title>
 
+  <meta name="theme-color" content="#0f1729" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Zápisník" />
 
-<div class="tool-group">
-<div class="label">Vlastnosti</div>
-<input type="color" id="color" value="#1f2937" title="Barva" />
-<label class="row">Tloušťka <input type="range" id="size" min="1" max="36" value="3" /></label>
-<label class="row">Průhlednost <input type="range" id="alpha" min="0" max="1" step="0.05" value="1" /></label>
-</div>
+  <!-- Manifest a ikony: absolutní cesty pro GitHub Pages -->
+  <link rel="manifest" href="/zapisnik/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/zapisnik/icons/icon-192.png" />
 
+  <!-- Styl -->
+  <link rel="stylesheet" href="/zapisnik/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="left">
+      <button id="btn-install" title="Nainstalovat PWA" style="display:none">➕ Nainstalovat</button>
+      <select id="bg-select" title="Pozadí stránku">
+        <option value="plain">Bílý papír</option>
+        <option value="ruled">Linkovaný</option>
+        <option value="grid">Čtverečkovaný</option>
+      </select>
+      <button id="btn-new-page" title="Přidat stránku">+ Stránka</button>
+      <span id="page-info"></span>
+      <button id="btn-prev" title="Předchozí stránka">◀</button>
+      <button id="btn-next" title="Další stránka">▶</button>
+    </div>
+    <div class="right">
+      <button id="btn-save" title="Uložit sešit do prohlížeče">💾 Uložit</button>
+      <button id="btn-load" title="Načíst sešit z prohlížeče">📂 Načíst</button>
+      <button id="btn-export" title="Export do PDF">📄 Export PDF</button>
+    </div>
+  </header>
 
-<div class="tool-group">
-<div class="label">Akce</div>
-<button id="btn-undo">↶ Zpět</button>
-<button id="btn-redo">↷ Znovu</button>
-<button id="btn-clear">🗑️ Vyčistit stránku</button>
-<input type="file" id="image-input" accept="image/*" style="display:none" />
-</div>
-</aside>
+  <main class="workspace">
+    <aside class="toolbar">
+      <div class="tool-group">
+        <div class="label">Nástroje</div>
+        <button class="tool" data-tool="pen">✒️ Pero</button>
+        <button class="tool" data-tool="pencil">✏️ Tužka</button>
+        <button class="tool" data-tool="marker">🖍️ Zvýrazňovač</button>
+        <button class="tool" data-tool="brush">🖌️ Štětec</button>
+        <button class="tool" data-tool="eraser">🩹 Guma</button>
+        <button class="tool" data-tool="text">🔤 Text</button>
+        <button class="tool" data-tool="image">🖼️ Obrázek</button>
+        <button class="tool" data-tool="select">🔲 Výběr</button>
+      </div>
 
+      <div class="tool-group">
+        <div class="label">Vlastnosti</div>
+        <input type="color" id="color" value="#1f2937" title="Barva" />
+        <label class="row">Tloušťka <input type="range" id="size" min="1" max="36" value="3" /></label>
+        <label class="row">Průhlednost <input type="range" id="alpha" min="0" max="1" step="0.05" value="1" /></label>
+      </div>
 
-<section class="sheet-wrap">
-<!-- dynamické linky/čtverečky kreslíme pod kreslicí vrstvou -->
-<canvas id="bg-canvas"></canvas>
-<canvas id="draw-canvas"></canvas>
-<!-- edit box pro text -->
-<textarea id="text-editor" placeholder="Piš…"></textarea>
-</section>
-</main>
+      <div class="tool-group">
+        <div class="label">Akce</div>
+        <button id="btn-undo">↶ Zpět</button>
+        <button id="btn-redo">↷ Znovu</button>
+        <button id="btn-clear">🗑️ Vyčistit stránku</button>
+        <input type="file" id="image-input" accept="image/*" style="display:none" />
+      </div>
+    </aside>
 
+    <section class="sheet-wrap">
+      <canvas id="bg-canvas"></canvas>
+      <canvas id="draw-canvas"></canvas>
+      <textarea id="text-editor" placeholder="Piš…"></textarea>
+    </section>
+  </main>
 
-<footer class="bottombar">
-<div>Tip: Dlouhým stiskem v režimu „Výběr“ uchopíš text/obrázek a přesuneš. Dvěma prsty zoom/posun (mobil/tablet).</div>
-</footer>
+  <footer class="bottombar">
+    <div>Tip: Dlouhým stiskem v režimu „Výběr“ uchopíš text/obrázek a přesuneš. Dvěma prsty zoom/posun.</div>
+  </footer>
 
+  <!-- jsPDF pro export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-4UuW0b0Z3zQ6w0G1m8Q+3m8V5m3d2c4m5v3m2v1V" crossorigin="anonymous"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script type="module" src="./app.js"></script>
+  <!-- Aplikace -->
+  <script type="module" src="/zapisnik/app.js"></script>
 
+  <!-- Registrace SW s absolutní cestou a deferred prompt pro instalaci -->
+  <script>
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/zapisnik/sw.js');
+      });
+    }
 
-<script>
-// Service Worker registrace
-if ('serviceWorker' in navigator) {
-window.addEventListener('load', () => {
-navigator.serviceWorker.register('./sw.js');
-});
-}
+    // PWA instalace (deferred prompt)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btn-install');
+      btn.style.display = 'inline-block';
+      btn.onclick = async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          btn.style.display = 'none';
+        }
+      };
+    });
 
-
-// PWA instalace (deferred prompt)
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-e.preventDefault();
-deferredPrompt = e;
-const btn = document.getElementById('btn-install');
-btn.style.display = 'inline-block';
-btn.onclick = async () => {
-if (deferredPrompt) {
-deferredPrompt.prompt();
-await deferredPrompt.userChoice;
-deferredPrompt = null;
-btn.style.display = 'none';
-}
-};
-});
-</script>
+    // iOS: zobrazit tlačítko, i když nepodporuje event (pouze návod k „Přidat na plochu“)
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
+      const btn = document.getElementById('btn-install');
+      btn.style.display = 'inline-block';
+      btn.onclick = () => alert('Na iOS otevři sdílecí nabídku a zvol „Přidat na plochu“.');
+    }
+  </script>
 </body>
 </html>
