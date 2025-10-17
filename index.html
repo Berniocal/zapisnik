@@ -10,11 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Zápisník" />
 
-  <!-- Manifest a ikony: absolutní cesty pro GitHub Pages -->
   <link rel="manifest" href="/zapisnik/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/zapisnik/icons/icon-192.png" />
-
-  <!-- Styl -->
   <link rel="stylesheet" href="/zapisnik/styles.css" />
 </head>
 <body>
@@ -79,22 +76,17 @@
     <div>Tip: Dlouhým stiskem v režimu „Výběr“ uchopíš text/obrázek a přesuneš. Dvěma prsty zoom/posun.</div>
   </footer>
 
-  <!-- jsPDF pro export -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-4UuW0b0Z3zQ6w0G1m8Q+3m8V5m3d2c4m5v3m2v1V" crossorigin="anonymous"></script>
-
-  <!-- Aplikace -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script type="module" src="/zapisnik/app.js"></script>
 
-  <!-- Registrace SW s absolutní cestou a deferred prompt pro instalaci -->
   <script>
-    // Service Worker
+    // SW
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/zapisnik/sw.js');
       });
     }
-
-    // PWA instalace (deferred prompt)
+    // deferred prompt
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -110,12 +102,10 @@
         }
       };
     });
-
-    // iOS: zobrazit tlačítko, i když nepodporuje event (pouze návod k „Přidat na plochu“)
     if (/iphone|ipad|ipod/i.test(navigator.userAgent)) {
       const btn = document.getElementById('btn-install');
       btn.style.display = 'inline-block';
-      btn.onclick = () => alert('Na iOS otevři sdílecí nabídku a zvol „Přidat na plochu“.');
+      btn.onclick = () => alert('Na iOS otevři sdílení → Přidat na plochu.');
     }
   </script>
 </body>
