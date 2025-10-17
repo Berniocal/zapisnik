@@ -1,0 +1,38 @@
+:root{
+--bg:#0f1729; --panel:#111827; --ink:#1f2937; --text:#e5e7eb; --muted:#9ca3af; --accent:#60a5fa;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu}
+
+
+.topbar,.bottombar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:var(--panel);position:sticky;z-index:3}
+.topbar{top:0} .bottombar{bottom:0;color:var(--muted);font-size:13px}
+.topbar .left,.topbar .right{display:flex;gap:8px;align-items:center}
+button,select,input[type="color"]{background:#1f2937;border:1px solid #374151;color:var(--text);padding:6px 10px;border-radius:10px}
+button:hover{border-color:#4b5563}
+
+
+.workspace{display:grid;grid-template-columns:280px 1fr;gap:12px;padding:12px;min-height:calc(100vh - 96px)}
+.toolbar{background:var(--panel);border:1px solid #1f2937;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:12px;position:sticky;top:64px;height:fit-content}
+.tool-group{display:flex;flex-direction:column;gap:8px}
+.tool-group .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.tool{display:block;width:100%;text-align:left}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+
+
+.sheet-wrap{position:relative;display:grid;place-items:center;background:#0b1420;border:1px solid #1f2937;border-radius:16px;overflow:auto;padding:12px}
+#bg-canvas,#draw-canvas{max-width:100%;max-height:100%;background:#fff;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.35)}
+#bg-canvas{position:absolute;inset:auto}
+#draw-canvas{position:relative;z-index:1;touch-action:none}
+
+
+#text-editor{position:absolute;z-index:2;display:none;min-width:120px;min-height:40px;padding:6px 8px;border-radius:8px;border:1px dashed #93c5fd;background:rgba(255,255,255,.9);color:#111;font:16px/1.3 system-ui}
+
+
+#page-info{font-size:12px;color:var(--muted)}
+
+
+@media (max-width: 980px){
+.workspace{grid-template-columns:1fr}
+.toolbar{position:static}
+}
