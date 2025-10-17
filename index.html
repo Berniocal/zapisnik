@@ -1,0 +1,68 @@
+<!doctype html>
+
+
+<div class="tool-group">
+<div class="label">Vlastnosti</div>
+<input type="color" id="color" value="#1f2937" title="Barva" />
+<label class="row">Tloušťka <input type="range" id="size" min="1" max="36" value="3" /></label>
+<label class="row">Průhlednost <input type="range" id="alpha" min="0" max="1" step="0.05" value="1" /></label>
+</div>
+
+
+<div class="tool-group">
+<div class="label">Akce</div>
+<button id="btn-undo">↶ Zpět</button>
+<button id="btn-redo">↷ Znovu</button>
+<button id="btn-clear">🗑️ Vyčistit stránku</button>
+<input type="file" id="image-input" accept="image/*" style="display:none" />
+</div>
+</aside>
+
+
+<section class="sheet-wrap">
+<!-- dynamické linky/čtverečky kreslíme pod kreslicí vrstvou -->
+<canvas id="bg-canvas"></canvas>
+<canvas id="draw-canvas"></canvas>
+<!-- edit box pro text -->
+<textarea id="text-editor" placeholder="Piš…"></textarea>
+</section>
+</main>
+
+
+<footer class="bottombar">
+<div>Tip: Dlouhým stiskem v režimu „Výběr“ uchopíš text/obrázek a přesuneš. Dvěma prsty zoom/posun (mobil/tablet).</div>
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script type="module" src="./app.js"></script>
+
+
+<script>
+// Service Worker registrace
+if ('serviceWorker' in navigator) {
+window.addEventListener('load', () => {
+navigator.serviceWorker.register('./sw.js');
+});
+}
+
+
+// PWA instalace (deferred prompt)
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+e.preventDefault();
+deferredPrompt = e;
+const btn = document.getElementById('btn-install');
+btn.style.display = 'inline-block';
+btn.onclick = async () => {
+if (deferredPrompt) {
+deferredPrompt.prompt();
+await deferredPrompt.userChoice;
+deferredPrompt = null;
+btn.style.display = 'none';
+}
+};
+});
+</script>
+</body>
+</html>
